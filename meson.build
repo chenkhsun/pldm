@@ -61,6 +61,9 @@ if get_option('oem-ibm').allowed()
   conf_data.set('DMA_MAXSIZE', get_option('oem-ibm-dma-maxsize'))
   add_project_arguments('-DOEM_IBM', language : ['c', 'cpp'])
 endif
+if get_option('oem-meta').allowed()
+  add_project_arguments('-DOEM_META', language : ['c','cpp'])
+endif
 conf_data.set('NUMBER_OF_REQUEST_RETRIES', get_option('number-of-request-retries'))
 conf_data.set('INSTANCE_ID_EXPIRATION_INTERVAL',get_option('instance-id-expiration-interval'))
 conf_data.set('RESPONSE_TIME_OUT',get_option('response-time-out'))
