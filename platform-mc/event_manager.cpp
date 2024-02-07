@@ -2,14 +2,17 @@
 
 #include "libpldm/utils.h"
 
+#include "requester/configuration_discovery_handler.hpp"
 #include "terminus_manager.hpp"
 
+#include <oem/meta/platform-mc/event_oem_meta.hpp>
 #include <phosphor-logging/lg2.hpp>
 #include <xyz/openbmc_project/Logging/Entry/server.hpp>
 
 #include <cerrno>
 
 PHOSPHOR_LOG2_USING;
+constexpr auto MetaIANA = "0015A000";
 
 namespace pldm
 {
@@ -81,6 +84,23 @@ int decode_pldm_cper_event_data(const uint8_t* event_data,
     return PLDM_SUCCESS;
 }
 
+bool EventManager::checkMetaIana(
+    pldm_tid_t tid, const std::map<std::string, MctpEndpoint>& configurations)
+{
+    for (const auto& [configDbusPath, mctpEndpoint] : configurations)
+    {
+        if (mctpEndpoint.EndpointId == tid)
+        {
+            if (mctpEndpoint.iana.has_value() &&
+                mctpEndpoint.iana.value() == MetaIANA)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int EventManager::handlePlatformEvent(pldm_tid_t tid, uint8_t eventClass,
                                       const uint8_t* eventData,
                                       size_t eventDataSize)
@@ -128,6 +148,19 @@ int EventManager::handlePlatformEvent(pldm_tid_t tid, uint8_t eventClass,
     else if (eventClass == PLDM_OEM_EVENT_CLASS_0xFA)
     {
         return processCperEvent(eventData, eventDataSize);
+    }
+    else if (eventClass == PLDM_OEM_EVENT_CLASS_0xFB)
+    {
+        const std::map<std::string, MctpEndpoint>& configurations =
+            configurationDiscovery->getConfigurations();
+        if (!checkMetaIana(tid, configurations))
+        {
+            lg2::error("Recieve OEM Meta event from not Meta specific device");
+            return PLDM_ERROR;
+        }
+        pldm::platform_mc::oem_meta::processOemMetaEvent(
+            tid, eventData, eventDataSize, configurations);
+        return PLDM_SUCCESS;
     }
 
     lg2::info("Unsupported class type {CLASSTYPE}", "CLASSTYPE", eventClass);
