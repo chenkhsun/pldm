@@ -184,7 +184,7 @@ void SensorManager::doSensorPolling(pldm_tid_t tid)
             rcOpt = PLDM_SUCCESS;
         }
     }),
-                exec::default_task_context<void>());
+                exec::default_task_context<void>(exec::inline_scheduler{}));
 }
 
 exec::task<int> SensorManager::doSensorPollingTask(pldm_tid_t tid)
@@ -259,7 +259,7 @@ exec::task<int> SensorManager::doSensorPollingTask(pldm_tid_t tid)
 
             sd_event_now(event.get(), CLOCK_MONOTONIC, &t1);
             elapsed = t1 - sensor->timeStamp;
-            if (sensor->updateTime <= elapsed)
+            if ((sensor->updateTime <= elapsed) || (sensor->timeStamp == 0))
             {
                 rc = co_await getSensorReading(sensor);
 
