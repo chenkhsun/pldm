@@ -3,6 +3,7 @@
 #include "oem_meta_file_io_type_bios_version.hpp"
 #include "oem_meta_file_io_type_event_log.hpp"
 #include "oem_meta_file_io_type_post_code.hpp"
+#include "oem_meta_file_io_type_power_control.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
 #include <libpldm/oem/meta/file_io.h>
@@ -31,6 +32,10 @@ std::unique_ptr<FileHandler> FileIOHandler::getHandlerByType(uint8_t messageTid,
         case EVENT_LOG:
             return std::make_unique<EventLogHandler>(
                 messageTid, configurationDiscovery->getConfigurations());
+        case POWER_CONTROL:
+            return std::make_unique<PowerControlHandler>(
+                messageTid, configurationDiscovery->getConfigurations(),
+                dBusIntf);
         default:
             error("Get invalid file io type, FILEIOTYPE={FILEIOTYPE}",
                   "FILEIOTYPE", fileIOType);
@@ -52,6 +57,7 @@ Response FileIOHandler::writeFileIO(pldm_tid_t tid, const pldm_msg* request,
 
     if (rc != PLDM_SUCCESS)
     {
+        error("Failed to decode OEM Meta file IO request, rc={RC}", "RC", rc);
         return ccOnlyResponse(request, rc);
     }
 
