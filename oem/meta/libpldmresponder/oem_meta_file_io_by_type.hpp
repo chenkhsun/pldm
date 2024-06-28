@@ -19,6 +19,7 @@ enum pldm_oem_meta_file_io_type : uint8_t
     POST_CODE = 0x00,
     BIOS_VERSION = 0x01,
     POWER_CONTROL = 0x02,
+    APML_ALERT = 0x04,
     EVENT_LOG = 0x05,
 };
 

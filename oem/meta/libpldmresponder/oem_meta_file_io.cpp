@@ -4,6 +4,7 @@
 #include "oem_meta_file_io_type_event_log.hpp"
 #include "oem_meta_file_io_type_post_code.hpp"
 #include "oem_meta_file_io_type_power_control.hpp"
+#include "oem_meta_file_io_type_apml_alert.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
 #include <libpldm/oem/meta/file_io.h>
@@ -29,6 +30,8 @@ std::unique_ptr<FileHandler> FileIOHandler::getHandlerByType(uint8_t messageTid,
             return std::make_unique<BIOSVersionHandler>(
                 messageTid, configurationDiscovery->getConfigurations(),
                 dBusIntf);
+        case APML_ALERT:
+            return std::make_unique<APMLAlertHandler>(messageTid, dBusIntf);
         case EVENT_LOG:
             return std::make_unique<EventLogHandler>(
                 messageTid, configurationDiscovery->getConfigurations());
