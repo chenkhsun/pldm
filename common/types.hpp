@@ -25,6 +25,10 @@ using Command = uint8_t;
  *         Reserved for future purpose
  */
 
+using Association = std::tuple<std::string, std::string, std::string>;
+using DownstreamDeviceIndex = uint16_t;
+using InventoryPath = std::string;
+using FirmwareDeviceName = std::string;
 using MctpMedium = std::string;
 /** @brief Type definition of MCTP Network Index.
  *         uint32_t is used as defined in MCTP Endpoint D-Bus Interface
@@ -38,7 +42,7 @@ using NetworkId = uint32_t;
  *         MctpMedium: Endpoint MCTP Medium info (Resersed)
  *         NetworkId: MCTP network index
  */
-using MctpInfo = std::tuple<eid, UUID, MctpMedium, NetworkId>;
+using MctpInfo = std::tuple<eid, UUID, MctpMedium, NetworkId, InventoryPath>;
 
 /** @brief Type defined for list of MCTP interface information
  */
@@ -61,9 +65,9 @@ using Interface = std::string;
 using Interfaces = std::vector<std::string>;
 using Property = std::string;
 using PropertyType = std::string;
-using Value =
-    std::variant<bool, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t,
-                 uint64_t, double, std::string, std::vector<uint8_t>>;
+using Value = std::variant<bool, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
+                           int64_t, uint64_t, double, std::string,
+                           std::vector<uint8_t>, std::vector<Association>>;
 
 using PropertyMap = std::map<Property, Value>;
 using InterfaceMap = std::map<Interface, PropertyMap>;
@@ -84,8 +88,12 @@ using VendorDefinedDescriptorInfo =
 using Descriptors =
     std::map<DescriptorType,
              std::variant<DescriptorData, VendorDefinedDescriptorInfo>>;
+using DownstreamDeviceIndex = uint16_t;
+using DownstreamDeviceInfo = std::tuple<DownstreamDeviceIndex, Descriptors>;
+using DownstreamDevices = std::vector<DownstreamDeviceInfo>;
 
 using DescriptorMap = std::unordered_map<eid, Descriptors>;
+using DownstreamDescriptorMap = std::unordered_map<eid, DownstreamDevices>;
 
 // Component information
 using CompClassification = uint16_t;

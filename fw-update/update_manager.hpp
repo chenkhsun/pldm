@@ -31,7 +31,16 @@ using DeviceUpdaterInfo = std::pair<mctp_eid_t, DeviceIDRecordOffset>;
 using DeviceUpdaterInfos = std::vector<DeviceUpdaterInfo>;
 using TotalComponentUpdates = size_t;
 
-class UpdateManager
+class UpdateManagerInf
+{
+  public:
+    virtual Response handleRequest(mctp_eid_t eid, uint8_t command,
+                                   const pldm_msg* request,
+                                   size_t reqMsgLen) = 0;
+    virtual ~UpdateManagerInf(){};
+};
+
+class UpdateManager : public UpdateManagerInf
 {
   public:
     UpdateManager() = delete;
@@ -39,20 +48,26 @@ class UpdateManager
     UpdateManager(UpdateManager&&) = delete;
     UpdateManager& operator=(const UpdateManager&) = delete;
     UpdateManager& operator=(UpdateManager&&) = delete;
-    ~UpdateManager() = default;
+    ~UpdateManager() override = default;
 
     explicit UpdateManager(
         Event& event,
         pldm::requester::Handler<pldm::requester::Request>& handler,
         InstanceIdDb& instanceIdDb, const DescriptorMap& descriptorMap,
-        const ComponentInfoMap& componentInfoMap) :
+        const ComponentInfoMap& componentInfoMap,
+        const bool watchFolder = true) :
         event(event),
         handler(handler), instanceIdDb(instanceIdDb),
         descriptorMap(descriptorMap), componentInfoMap(componentInfoMap),
-        watch(event.get(),
-              std::bind_front(&UpdateManager::processPackage, this)),
         totalNumComponentUpdates(0), compUpdateCompletedCount(0)
-    {}
+    {
+        if (watchFolder)
+        {
+            watch = std::make_unique<Watch>(
+                event.get(),
+                std::bind_front(&UpdateManager::processPackage, this));
+        }
+    }
 
     /** @brief Handle PLDM request for the commands in the FW update
      *         specification
@@ -65,7 +80,7 @@ class UpdateManager
      *  @return PLDM response message
      */
     Response handleRequest(mctp_eid_t eid, uint8_t command,
-                           const pldm_msg* request, size_t reqMsgLen);
+                           const pldm_msg* request, size_t reqMsgLen) override;
 
     int processPackage(const std::filesystem::path& packageFilePath);
 
@@ -100,10 +115,10 @@ class UpdateManager
     const DescriptorMap& descriptorMap;
     /** @brief Component information needed for the update of the managed FDs */
     const ComponentInfoMap& componentInfoMap;
-    Watch watch;
+    std::unique_ptr<Watch> watch;
 
-    std::unique_ptr<Activation> activation;
-    std::unique_ptr<ActivationProgress> activationProgress;
+    std::shared_ptr<Activation> activation;
+    std::shared_ptr<ActivationProgress> activationProgress;
     std::string objPath;
 
     std::filesystem::path fwPackageFilePath;

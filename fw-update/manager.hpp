@@ -1,10 +1,12 @@
 #pragma once
 
 #include "activation.hpp"
+#include "aggregate_update_manager.hpp"
 #include "common/instance_id.hpp"
 #include "common/types.hpp"
 #include "device_updater.hpp"
 #include "inventory_manager.hpp"
+#include "requester/configuration_discovery_handler.hpp"
 #include "requester/handler.hpp"
 #include "requester/mctp_endpoint_discovery.hpp"
 #include "update_manager.hpp"
@@ -37,13 +39,18 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
      *
      *  @param[in] handler - PLDM request handler
      */
-    explicit Manager(Event& event,
-                     requester::Handler<requester::Request>& handler,
-                     pldm::InstanceIdDb& instanceIdDb) :
-        inventoryMgr(handler, instanceIdDb, descriptorMap, componentInfoMap),
-        updateManager(event, handler, instanceIdDb, descriptorMap,
-                      componentInfoMap)
-    {}
+    explicit Manager(
+        Event& event, requester::Handler<requester::Request>& handler,
+        pldm::InstanceIdDb& instanceIdDb,
+        pldm::ConfigurationDiscoveryHandler* configurationDiscovery) :
+        inventoryMgr(event, handler, instanceIdDb, descriptorMap,
+                     downstreamDescriptorMap, componentInfoMap,
+                     std::static_pointer_cast<AggregateUpdateManager>(updateManager),
+                     configurationDiscovery),
+        updateManager(std::make_shared<AggregateUpdateManager>(
+            std::make_shared<UpdateManager>(event, handler, instanceIdDb,
+                                            descriptorMap, componentInfoMap)))
+        {}
 
     /** @brief Helper function to invoke registered handlers for
      *         the added MCTP endpoints
@@ -52,13 +59,7 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
      */
     void handleMctpEndpoints(const MctpInfos& mctpInfos)
     {
-        std::vector<mctp_eid_t> eids;
-        for (const auto& mctpInfo : mctpInfos)
-        {
-            eids.emplace_back(std::get<mctp_eid_t>(mctpInfo));
-        }
-
-        inventoryMgr.discoverFDs(eids);
+        inventoryMgr.discoverFDs(mctpInfos);
     }
 
     /** @brief Helper function to invoke registered handlers for
@@ -83,21 +84,25 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
     Response handleRequest(mctp_eid_t eid, Command command,
                            const pldm_msg* request, size_t reqMsgLen)
     {
-        return updateManager.handleRequest(eid, command, request, reqMsgLen);
+        return updateManager->handleRequest(eid, command, request, reqMsgLen);
     }
 
   private:
     /** Descriptor information of all the discovered MCTP endpoints */
     DescriptorMap descriptorMap;
 
+    /** Downstream descriptor information of all the discovered MCTP endpoints
+     */
+    DownstreamDescriptorMap downstreamDescriptorMap;
+
     /** Component information of all the discovered MCTP endpoints */
     ComponentInfoMap componentInfoMap;
 
     /** @brief PLDM firmware inventory manager */
     InventoryManager inventoryMgr;
-
-    /** @brief PLDM firmware update manager */
-    UpdateManager updateManager;
+ 
+    /** @brief PLDM update manager */
+    std::shared_ptr<UpdateManagerInf> updateManager;
 };
 
 } // namespace fw_update

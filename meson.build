@@ -93,6 +93,7 @@ phosphor_dbus_interfaces = dependency('phosphor-dbus-interfaces')
 sdbusplus = dependency('sdbusplus')
 sdeventplus = dependency('sdeventplus')
 stdplus = dependency('stdplus')
+openssl = dependency('openssl')
 phosphor_logging_dep = dependency('phosphor-logging')
 
 nlohmann_json_dep = dependency('nlohmann_json', include_type: 'system')
@@ -154,6 +155,7 @@ deps = [
   libpldm_dep,
   libpldmutils,
   nlohmann_json_dep,
+  openssl,
   phosphor_dbus_interfaces,
   phosphor_logging_dep,
   sdbusplus,
@@ -174,7 +176,9 @@ executable(
   'pldmd/dbus_impl_pdr.cpp',
   'fw-update/activation.cpp',
   'fw-update/inventory_manager.cpp',
+  'fw-update/inventory_item_manager.cpp',
   'fw-update/package_parser.cpp',
+  'fw-update/code_updater.cpp',
   'fw-update/device_updater.cpp',
   'fw-update/watch.cpp',
   'fw-update/update_manager.cpp',
@@ -187,6 +191,7 @@ executable(
   'platform-mc/event_manager.cpp',
   'requester/mctp_endpoint_discovery.cpp',
   'requester/configuration_discovery_handler.cpp',
+  'requester/handler.cpp',
   'oem/meta/platform-mc/event_oem_meta.cpp',
   implicit_include_directories: false,
   dependencies: deps,
