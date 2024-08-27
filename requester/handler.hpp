@@ -373,37 +373,29 @@ class Handler
                         uint8_t command, const pldm_msg* response,
                         size_t respMsgLen)
     {
-        std::cout << __func__ << std::endl;
         RequestKey key{eid, instanceId, type, command};
         if (handlers.contains(key))
         {
-            std::cout << "contains\n";
             auto& [request, responseHandler, timerInstance] = handlers[key];
             request->stop();
             auto rc = timerInstance->stop();
-            std::cout << "rc: " << rc << std::endl;
             if (rc)
             {
                 error(
                     "Failed to stop the instance ID expiry timer, response code '{RC}'",
                     "RC", rc);
             }
-            std::cout << "construct reshandler\n";
             std::cout << key << std::endl;
             responseHandler(eid, response, respMsgLen);
-            std::cout << "free instance id db\n";
             instanceIdDb.free(key.eid, key.instanceId);
-            std::cout << "erace handlers\n";
             handlers.erase(key);
 
             endpointMessageQueues[eid]->activeRequest = false;
             /* try to send new request if the endpoint is free */
-            std::cout << "poll endpoint queue\n";
             pollEndpointQueue(eid);
         }
         else
         {
-            std::cout << "!contains\n";
             // Got a response for a PLDM request message not registered with the
             // request handler, so freeing up the instance ID, this can be other
             // OpenBMC applications relying on PLDM D-Bus apis like

@@ -110,42 +110,34 @@ static std::optional<Response>
 
     pldm_header_info hdrFields{};
     auto hdr = reinterpret_cast<const pldm_msg_hdr*>(requestMsg.data());
-    std::cout << __func__ << 1 << std::endl;
     if (PLDM_SUCCESS != unpack_pldm_header(hdr, &hdrFields))
     {
         error("Empty PLDM request header");
         return std::nullopt;
     }
-    std::cout << __func__ << 2 << std::endl;
 
     if (PLDM_RESPONSE != hdrFields.msg_type)
     {
 
-        std::cout << __func__ << 3 << std::endl;
         Response response;
         auto request = reinterpret_cast<const pldm_msg*>(hdr);
         size_t requestLen = requestMsg.size() - sizeof(struct pldm_msg_hdr);
-        std::cout << __func__ << 4 << std::endl;
         try
         {
             if (hdrFields.pldm_type != PLDM_FWUP)
             {
-                std::cout << "!= fwup" << std::endl;
                 response = invoker.handle(tid, hdrFields.pldm_type,
                                           hdrFields.command, request,
                                           requestLen);
             }
             else
             {
-                std::cout << "== fwup" << std::endl;
                 response = fwManager->handleRequest(eid, hdrFields.command,
                                                     request, requestLen);
             }
-            std::cout << "end try\n";
         }
         catch (const std::out_of_range& e)
         {
-            std::cout << "catch\n";
             uint8_t completion_code = PLDM_ERROR_UNSUPPORTED_PLDM_CMD;
             response.resize(sizeof(pldm_msg_hdr));
             auto responseHdr = reinterpret_cast<pldm_msg_hdr*>(response.data());
@@ -163,19 +155,15 @@ static std::optional<Response>
             }
             response.insert(response.end(), completion_code);
         }
-        std::cout << __func__ << 5 << std::endl;
         return response;
     }
     else if (PLDM_RESPONSE == hdrFields.msg_type)
     {
-        std::cout << "pldm res\n";
         auto response = reinterpret_cast<const pldm_msg*>(hdr);
         size_t responseLen = requestMsg.size() - sizeof(struct pldm_msg_hdr);
-        std::cout << "handle res\n";
         handler.handleResponse(eid, hdrFields.instance, hdrFields.pldm_type,
                                hdrFields.command, response, responseLen);
     }
-    std::cout << "return\n";
     return std::nullopt;
 }
 
@@ -382,7 +370,6 @@ int main(int argc, char** argv)
             return;
         }
 
-        std::cout << "2\n";
         int returnCode = 0;
         void* requestMsg;
         size_t recvDataLength;
@@ -393,17 +380,14 @@ int main(int argc, char** argv)
             std::vector<uint8_t> requestMsgVec(
                 static_cast<uint8_t*>(requestMsg),
                 static_cast<uint8_t*>(requestMsg) + recvDataLength);
-            std::cout << "3\n";
             FlightRecorder::GetInstance().saveRecord(requestMsgVec, false);
             if (verbose)
             {
                 printBuffer(Rx, requestMsgVec);
             }
-            std::cout << "4\n";
             // process message and send response
             auto response = processRxMsg(requestMsgVec, invoker, reqHandler,
                                          fwManager.get(), TID);
-            std::cout << "5\n";
             if (response.has_value())
             {
                 FlightRecorder::GetInstance().saveRecord(*response, true);
@@ -421,7 +405,6 @@ int main(int argc, char** argv)
                         "TID", TID, "RETURN_CODE", returnCode);
                 }
             }
-            std::cout << "6\n";
         }
         // TODO check that we get here if mctp-demux dies?
         else if (returnCode == PLDM_REQUESTER_RECV_FAIL)
@@ -468,7 +451,6 @@ int main(int argc, char** argv)
     stdplus::signal::block(SIGUSR1);
     sdeventplus::source::Signal sigUsr1(
         event, SIGUSR1, std::bind_front(&interruptFlightRecorderCallBack));
-    std::cout << "1\n";
     int returnCode = event.loop();
     if (returnCode)
     {
