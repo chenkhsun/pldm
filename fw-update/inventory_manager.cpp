@@ -807,7 +807,7 @@ void InventoryManager::getFirmwareParameters(mctp_eid_t eid,
     aggregateUpdateManager->addUpdateManager(updateManager);
     inventoryItemManager.createInventoryItem(
         eid, firmwareDeviceNameMap.at(eid),
-        utils::toString(pendingCompImageSetVerStr), updateManager);
+        utils::toString(activeCompImageSetVerStr), updateManager);
 }
 
 } // namespace fw_update
