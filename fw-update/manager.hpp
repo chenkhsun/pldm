@@ -43,13 +43,13 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
         Event& event, requester::Handler<requester::Request>& handler,
         pldm::InstanceIdDb& instanceIdDb,
         pldm::ConfigurationDiscoveryHandler* configurationDiscovery) :
+        updateManager(std::make_shared<AggregateUpdateManager>(
+            std::make_shared<UpdateManager>(event, handler, instanceIdDb,
+                                            descriptorMap, componentInfoMap))),
         inventoryMgr(event, handler, instanceIdDb, descriptorMap,
                      downstreamDescriptorMap, componentInfoMap,
                      std::static_pointer_cast<AggregateUpdateManager>(updateManager),
-                     configurationDiscovery),
-        updateManager(std::make_shared<AggregateUpdateManager>(
-            std::make_shared<UpdateManager>(event, handler, instanceIdDb,
-                                            descriptorMap, componentInfoMap)))
+                     configurationDiscovery)
         {}
 
     /** @brief Helper function to invoke registered handlers for
@@ -98,11 +98,11 @@ class Manager : public pldm::MctpDiscoveryHandlerIntf
     /** Component information of all the discovered MCTP endpoints */
     ComponentInfoMap componentInfoMap;
 
-    /** @brief PLDM firmware inventory manager */
-    InventoryManager inventoryMgr;
- 
     /** @brief PLDM update manager */
     std::shared_ptr<UpdateManagerInf> updateManager;
+
+    /** @brief PLDM firmware inventory manager */
+    InventoryManager inventoryMgr;
 };
 
 } // namespace fw_update
