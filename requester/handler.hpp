@@ -48,7 +48,6 @@ struct RequestKey
         return ((eid == e.eid) && (instanceId == e.instanceId) &&
                 (type == e.type) && (command == e.command));
     }
-    friend std::ostream &operator<<(std::ostream &os, const RequestKey &obj);
 };
 
 /** @struct RequestKeyHasher
@@ -385,7 +384,6 @@ class Handler
                     "Failed to stop the instance ID expiry timer, response code '{RC}'",
                     "RC", rc);
             }
-            std::cout << key << std::endl;
             responseHandler(eid, response, respMsgLen);
             instanceIdDb.free(key.eid, key.instanceId);
             handlers.erase(key);
